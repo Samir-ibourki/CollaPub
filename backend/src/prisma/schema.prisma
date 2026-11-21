@@ -1,0 +1,254 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CREATOR
+  BRAND
+  ADMIN
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  CAROUSEL
+}
+
+enum CollaborationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  NEGOTIATING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  SNAPCHAT
+  OTHER
+}
+
+enum NotificationType {
+  NEW_COLLABORATION_REQUEST
+  COLLABORATION_ACCEPTED
+  COLLABORATION_REJECTED
+  COLLABORATION_UPDATED
+  PROFILE_VIEW
+  SYSTEM
+}
+
+// ==========================================
+// 1. User & Authentication
+// ==========================================
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  fullName     String
+  passwordHash String
+  phoneNumber  String?
+  role         Role     @default(CREATOR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 1-to-1 Relations depending on role
+  creatorProfile CreatorProfile?
+  brandProfile   BrandProfile?
+
+  // Content & Notifications
+  posts         Post[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ==========================================
+// 2. Creator Profile (Professional Portfolio)
+// ==========================================
+model CreatorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio                String?  @db.Text
+  avatarUrl          String?
+  coverImageUrl      String?
+  city               String   @default("Casablanca")
+  country            String   @default("Morocco")
+  categories         String[] @default([]) // e.g. ["Fashion", "Food", "Tech"]
+  languages          String[] @default(["Darija", "French", "Arabic"])
+  collaborationTypes String[] @default([]) // e.g. ["Reels", "Stories", "Shooting", "Events"] (No prices)
+  isVerified         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // 1-to-Many Relations
+  socialAccounts SocialAccount[]
+  portfolioItems PortfolioItem[]
+  collaborations Collaboration[]
+  favoritedBy    Favorite[]
+
+  @@map("creator_profiles")
+}
+
+// ==========================================
+// 3. Social Media Accounts (Stats & Handles)
+// ==========================================
+model SocialAccount {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creatorProfile   CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+
+  platform       SocialPlatform
+  handle         String 
+  profileUrl     String?
+  followersCount Int            @default(0) 
+  engagementRate Float? 
+  isManual       Boolean        @default(true)
+  lastUpdated    DateTime       @default(now()) @updatedAt
+
+  @@unique([creatorProfileId, platform])
+  @@map("social_accounts")
+}
+
+// ==========================================
+// 4. Creator Portfolio (Past Brand Collabs)
+// ==========================================
+model PortfolioItem {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creatorProfile   CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+
+  title        String
+  brandName    String?
+  description  String?        @db.Text
+  mediaUrl     String
+  thumbnailUrl String?
+  campaignUrl  String?
+  platform     SocialPlatform @default(INSTAGRAM)
+  createdAt    DateTime       @default(now())
+
+  @@map("portfolio_items")
+}
+
+// ==========================================
+// 5. Brand Profile (Company Showcase)
+// ==========================================
+model BrandProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyName String
+  industry    String? 
+  logoUrl     String?
+  website     String?
+  city        String?  @default("Casablanca")
+  country     String?  @default("Morocco")
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  collaborations Collaboration[]
+  favorites      Favorite[]
+
+  @@map("brand_profiles")
+}
+
+// ==========================================
+// 6. Commercial Discovery Feed (Posts by Creators & Brands)
+// ==========================================
+model Post {
+  id         String @id @default(cuid())
+  authorId   String
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorRole Role 
+
+  title     String?
+  caption   String    @db.Text
+  mediaUrls String[] 
+  mediaType MediaType @default(IMAGE)
+
+  category String 
+  city     String? 
+  tags     String[] @default([])
+
+  likesCount Int @default(0)
+  viewsCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorRole])
+  @@index([category])
+  @@index([city])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+// ==========================================
+// 7. Private Collaboration & Partnership Workflow
+// ==========================================
+model Collaboration {
+  id             String       @id @default(cuid())
+  brandProfileId String
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  creatorProfileId String
+  creatorProfile   CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+
+  title          String 
+  description    String              @db.Text
+  deliverables   String[]            @default([]) 
+  proposedBudget Float? 
+  deadline       DateTime?
+  status         CollaborationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("collaborations")
+}
+
+// ==========================================
+// 8. Brand Favorites / Shortlists
+// ==========================================
+model Favorite {
+  id             String       @id @default(cuid())
+  brandProfileId String
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  creatorProfileId String
+  creatorProfile   CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([brandProfileId, creatorProfileId])
+  @@map("favorites")
+}
+
+// ==========================================
+// 9. In-App Notifications
+// ==========================================
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
