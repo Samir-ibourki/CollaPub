@@ -1,3 +1,4 @@
+import http from 'http'
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -6,6 +7,8 @@ import authRouter from './modules/auth/auth.routes.js'
 import profileRouter from './modules/profiles/profile.routes.js'
 import postRouter from './modules/posts/post.routes.js'
 import collaborationRouter from './modules/collaborations/collaboration.routes.js'
+import notificationRouter from './modules/notifications/notification.routes.js'
+import { initSocket } from './socket/index.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { generalLimiter } from './middleware/rateLimiter.js'
 
@@ -13,6 +16,10 @@ dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3030
+
+// http and websocket server setup
+const httpServer = http.createServer(app)
+initSocket(httpServer)
 
 // middlewares
 app.use(cors())
@@ -24,6 +31,7 @@ app.use("/api/auth", authRouter)
 app.use("/api/profiles", profileRouter)
 app.use("/api/posts", postRouter)
 app.use("/api/collaborations", collaborationRouter)
+app.use("/api/notifications", notificationRouter)
 
 // error handler 
 app.use(errorHandler)
@@ -33,7 +41,7 @@ async function main() {
         await prisma.$connect()
         console.log("Database connected successfully")
         
-        app.listen(PORT, () => {
+        httpServer.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT} `)
         })
     } catch (error) {

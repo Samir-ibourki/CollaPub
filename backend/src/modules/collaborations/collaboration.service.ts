@@ -1,4 +1,8 @@
 import prisma from "../../prisma/client.js";
+import {
+  sendRealtimeNotification,
+  sendRealtimeCollaborationUpdate,
+} from "../../socket/index.js";
 import type {
   CreateCollaborationInput,
   UpdateCollaborationStatusInput,
@@ -65,7 +69,7 @@ export const collaborationService = {
     });
 
     // notify the creator about the new collaboration request
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: creatorProfile.userId,
         type: "NEW_COLLABORATION_REQUEST",
@@ -77,6 +81,9 @@ export const collaborationService = {
         },
       },
     });
+
+    // emit realtime notification via websocket
+    sendRealtimeNotification(creatorProfile.userId, notification);
 
     return collaboration;
   },
@@ -284,7 +291,7 @@ export const collaborationService = {
     let notificationTitle = "Mise à jour du partenariat";
     let notificationMessage = `Le statut de la collaboration "${collaboration.title}" est maintenant: ${nextStatus}`;
 
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: recipientUserId,
         type: nextStatus === "ACCEPTED" ? "COLLABORATION_ACCEPTED" : nextStatus === "REJECTED" ? "COLLABORATION_REJECTED" : "COLLABORATION_UPDATED",
@@ -296,6 +303,10 @@ export const collaborationService = {
         },
       },
     });
+
+    // emit realtime notification and update via websocket
+    sendRealtimeNotification(recipientUserId, notification);
+    sendRealtimeCollaborationUpdate(recipientUserId, updated);
 
     return updated;
   },
