@@ -5,6 +5,7 @@ import prisma from './prisma/client.js'
 import authRouter from './modules/auth/auth.routes.js'
 import profileRouter from './modules/profiles/profile.routes.js'
 import postRouter from './modules/posts/post.routes.js'
+import collaborationRouter from './modules/collaborations/collaboration.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { generalLimiter } from './middleware/rateLimiter.js'
 
@@ -22,6 +23,7 @@ app.use("/api", generalLimiter)
 app.use("/api/auth", authRouter)
 app.use("/api/profiles", profileRouter)
 app.use("/api/posts", postRouter)
+app.use("/api/collaborations", collaborationRouter)
 
 // error handler 
 app.use(errorHandler)
@@ -32,7 +34,7 @@ async function main() {
         console.log("Database connected successfully")
         
         app.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT} 🚀`)
+            console.log(`Server running on http://localhost:${PORT} `)
         })
     } catch (error) {
         console.error("Failed to connect to database :", error)
