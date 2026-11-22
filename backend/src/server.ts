@@ -1,4 +1,5 @@
 import http from 'http'
+import path from 'path'
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -9,6 +10,7 @@ import postRouter from './modules/posts/post.routes.js'
 import collaborationRouter from './modules/collaborations/collaboration.routes.js'
 import notificationRouter from './modules/notifications/notification.routes.js'
 import favoriteRouter from './modules/favorites/favorite.routes.js'
+import uploadRouter from './modules/upload/upload.routes.js'
 import { initSocket } from './socket/index.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { generalLimiter } from './middleware/rateLimiter.js'
@@ -27,6 +29,9 @@ app.use(cors())
 app.use(express.json()) 
 app.use("/api", generalLimiter)
 
+// serve static uploaded files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")))
+
 // routes
 app.use("/api/auth", authRouter)
 app.use("/api/profiles", profileRouter)
@@ -34,6 +39,7 @@ app.use("/api/posts", postRouter)
 app.use("/api/collaborations", collaborationRouter)
 app.use("/api/notifications", notificationRouter)
 app.use("/api/favorites", favoriteRouter)
+app.use("/api/upload", uploadRouter)
 
 // error handler 
 app.use(errorHandler)
