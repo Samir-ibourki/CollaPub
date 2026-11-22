@@ -2,6 +2,9 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import prisma from './prisma/client.js'
+import authRouter from './modules/auth/auth.routes.js'
+import { errorHandler } from './middleware/errorHandler.js'
+import { generalLimiter } from './middleware/rateLimiter.js'
 
 dotenv.config()
 
@@ -11,6 +14,14 @@ const PORT = process.env.PORT || 3030
 // middlewares
 app.use(cors())
 app.use(express.json()) 
+app.use(errorHandler)
+app.use("/api", generalLimiter);
+
+
+// routes
+app.use("/api/auth", authRouter)
+
+
 
 async function main() {
     try {
