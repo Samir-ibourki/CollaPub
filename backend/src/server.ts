@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import prisma from './prisma/client.js'
 import authRouter from './modules/auth/auth.routes.js'
 import profileRouter from './modules/profiles/profile.routes.js'
+import postRouter from './modules/posts/post.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { generalLimiter } from './middleware/rateLimiter.js'
 
@@ -20,6 +21,7 @@ app.use("/api", generalLimiter)
 // routes
 app.use("/api/auth", authRouter)
 app.use("/api/profiles", profileRouter)
+app.use("/api/posts", postRouter)
 
 // error handler 
 app.use(errorHandler)
