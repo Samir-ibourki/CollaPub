@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "CollaPub",
-    "slug": "CollaPub",
+    "name": "frontend",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "collapub",
+    "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "server",
+      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -28,18 +28,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0B0D12",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ],
-      "expo-status-bar",
-      "expo-image",
-      "expo-secure-store"
+      ]
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+    "experiments": {}
   }
 }
