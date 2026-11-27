@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import * as NativeSplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -15,6 +15,7 @@ import {
 } from "@expo-google-fonts/inter";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import SplashOnboarding from "@/components/SplashOnboarding";
 import SplashScreen from "@/components/SplashScreen";
 
 // keep native splash visible until fonts finish loading
@@ -30,6 +31,17 @@ export default function RootLayout() {
     Inter_600SemiBold,
   });
 
+  const [revealOnboarding, setRevealOnboarding] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+
+  const handleSplashReveal = useCallback(() => {
+    setRevealOnboarding(true);
+  }, []);
+
+  const handleSplashDone = useCallback(() => {
+    setSplashDone(true);
+  }, []);
+
   const appReady = fontsLoaded || Boolean(fontError);
 
   useEffect(() => {
@@ -42,11 +54,19 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0B0D12" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <View style={StyleSheet.absoluteFill}>
-          <SplashScreen />
+          <SplashOnboarding active={revealOnboarding} />
+          {!splashDone && (
+            <View style={StyleSheet.absoluteFill}>
+              <SplashScreen
+                onReveal={handleSplashReveal}
+                onDone={handleSplashDone}
+              />
+            </View>
+          )}
         </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
