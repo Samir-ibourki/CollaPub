@@ -21,6 +21,9 @@ const IMG = {
   c5: require("../../assets/img5.jpg"),
   c6: require("../../assets/img6.jpg"),
   c7: require("../../assets/img7.jpg"),
+  c8: require("../../assets/img8.jpg"),
+  c9: require("../../assets/img9.jpg"),
+  c10: require("../../assets/img10.jpg"),
 };
 
 const TOP_CARD = {
@@ -36,29 +39,15 @@ const BELOW_CARDS = [
   { id: "c4", eyebrow: "TRAVEL · CHEFCHAOUEN", title: "Atlas Escape", source: IMG.c4 },
   { id: "c5", eyebrow: "TECH · TANGIER", title: "Studio Drop", source: IMG.c5 },
   { id: "c6", eyebrow: "FITNESS · AGADIR", title: "Active Run", source: IMG.c6 },
+  { id: "c10", eyebrow: "COLLAB · CASABLANCA", title: "Brand Match", source: IMG.c10 },
 ];
 
-// Side columns exist across the entire grid from the start (slivers at edges -> ~50% visible at final zoom-out)
+// Side columns have 5 cards each (offsets 2..6) ending aligned with img10 (offset 6)
 const SIDE_ROWS = [
   {
-    offset: -1,
-    left: { id: "sl-1", eyebrow: "STYLE · CASA", title: "Runway", source: IMG.c3 },
-    right: { id: "sr-1", eyebrow: "FOOD · RABAT", title: "Bistro", source: IMG.c2 },
-  },
-  {
-    offset: 0,
-    left: { id: "sl0", eyebrow: "TRAVEL · ATLAS", title: "Dunes", source: IMG.c4 },
-    right: { id: "sr0", eyebrow: "TECH · TANGIER", title: "Unboxing", source: IMG.c5 },
-  },
-  {
-    offset: 1,
-    left: { id: "sl1", eyebrow: "FITNESS · AGADIR", title: "Surf Club", source: IMG.c6 },
-    right: { id: "sr1", eyebrow: "BRAND · CASA", title: "Deal Day", source: IMG.c7 },
-  },
-  {
     offset: 2,
-    left: { id: "sl2", eyebrow: "FASHION · CASA", title: "Lookbook", source: IMG.c1 },
-    right: { id: "sr2", eyebrow: "BEAUTY · RABAT", title: "Skincare", source: IMG.c3 },
+    left: { id: "sl2", eyebrow: "FASHION · CASA", title: "Lookbook", source: IMG.c8 },
+    right: { id: "sr2", eyebrow: "BEAUTY · RABAT", title: "Skincare", source: IMG.c9 },
   },
   {
     offset: 3,
@@ -73,7 +62,12 @@ const SIDE_ROWS = [
   {
     offset: 5,
     left: { id: "sl5", eyebrow: "CREATOR · RABAT", title: "Collabs", source: IMG.c3 },
-    right: { id: "sr5", eyebrow: "TRAVEL · MARRAKECH", title: "Retreat", source: IMG.c4 },
+    right: { id: "sr5", eyebrow: "LIFESTYLE · FES", title: "Medina", source: IMG.c8 },
+  },
+  {
+    offset: 6,
+    left: { id: "sl6", eyebrow: "PARTNER · CASA", title: "Co-Create", source: IMG.c9 },
+    right: { id: "sr6", eyebrow: "TRAVEL · MARRAKECH", title: "Retreat", source: IMG.c4 },
   },
 ];
 
@@ -88,6 +82,7 @@ const CARD_GAP = 16;
 const CARD_MORPH_DELAY = 1800;
 const SCROLL_DELAY = 2700;
 const SCROLL_DURATION = 3000;
+const SIDE_ENTER_DELAY = SCROLL_DELAY + 2000;
 const ZOOM_OUT_2_DELAY = 5800;
 const BRAND_DELAY = 6900;
 const FINAL_SCALE = 0.8;
@@ -158,6 +153,7 @@ export default function SplashOnboarding({
 
   const neighborsOpacity = useSharedValue(reduced ? 1 : 0);
   const scrollY = useSharedValue(reduced ? scrollTarget : 0);
+  const sideScrollY = useSharedValue(reduced ? scrollTarget : 0);
   const worldScale = useSharedValue(reduced ? FINAL_SCALE : 1);
   const worldY = useSharedValue(reduced ? finalWorldY : 0);
   const sideGapExtra = useSharedValue(reduced ? maxSideGapExtra : 0);
@@ -182,6 +178,7 @@ export default function SplashOnboarding({
       cardRadius.value = 24;
       neighborsOpacity.value = 1;
       scrollY.value = scrollTarget;
+      sideScrollY.value = scrollTarget;
       worldScale.value = FINAL_SCALE;
       worldY.value = finalWorldY;
       sideGapExtra.value = maxSideGapExtra;
@@ -238,12 +235,19 @@ export default function SplashOnboarding({
       withTiming(1, { duration: 600, easing: EASE_OUT }),
     );
 
-    // 4. Vertical grid scrolls upward (side slivers already present at edges)
+    // 4. Center column scroll (Easing.out) vs unified side columns scroll (Easing.inOut)
     scrollY.value = withDelay(
       SCROLL_DELAY,
       withTiming(scrollTarget, {
         duration: SCROLL_DURATION,
-        easing: Easing.linear,
+        easing: Easing.out(Easing.linear),
+      }),
+    );
+    sideScrollY.value = withDelay(
+      SCROLL_DELAY + 250,
+      withTiming(scrollTarget, {
+        duration: SCROLL_DURATION,
+        easing: Easing.inOut(Easing.in),
       }),
     );
 
@@ -257,9 +261,9 @@ export default function SplashOnboarding({
       withTiming(finalWorldY, { duration: 1400, easing: EASE_OUT }),
     );
     sideGapExtra.value = withDelay(
-      SCROLL_DELAY,
+      SIDE_ENTER_DELAY,
       withTiming(maxSideGapExtra, {
-        duration: ZOOM_OUT_2_DELAY + 1400 - SCROLL_DELAY,
+        duration: ZOOM_OUT_2_DELAY + 1400 - SIDE_ENTER_DELAY,
         easing: EASE_OUT,
       }),
     );
@@ -283,24 +287,22 @@ export default function SplashOnboarding({
     transform: [{ translateY: scrollY.value }],
   }));
 
+  const sideColumnStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sideScrollY.value + sideStaggerY.value }],
+  }));
+
   const neighborsStyle = useAnimatedStyle(() => ({
     opacity: neighborsOpacity.value,
   }));
 
   const leftSideStyle = useAnimatedStyle(() => ({
     opacity: neighborsOpacity.value,
-    transform: [
-      { translateX: sideGapExtra.value },
-      { translateY: sideStaggerY.value },
-    ],
+    transform: [{ translateX: sideGapExtra.value }],
   }));
 
   const rightSideStyle = useAnimatedStyle(() => ({
     opacity: neighborsOpacity.value,
-    transform: [
-      { translateX: -sideGapExtra.value },
-      { translateY: sideStaggerY.value },
-    ],
+    transform: [{ translateX: -sideGapExtra.value }],
   }));
 
   const cardWrapStyle = useAnimatedStyle(() => ({
@@ -380,41 +382,6 @@ export default function SplashOnboarding({
             />
           ))}
 
-          {/* Left & right side columns present from the start */}
-          {SIDE_ROWS.map((row) => {
-            const topPos = targetTop + row.offset * stepY;
-            return (
-              <View key={`row-${row.offset}`}>
-                <CollabCard
-                  item={row.left}
-                  style={[
-                    {
-                      left: targetLeft - stepX,
-                      top: topPos,
-                      width: cardW,
-                      height: cardH,
-                      borderRadius: 24,
-                    },
-                    leftSideStyle,
-                  ]}
-                />
-                <CollabCard
-                  item={row.right}
-                  style={[
-                    {
-                      left: targetLeft + stepX,
-                      top: topPos,
-                      width: cardW,
-                      height: cardH,
-                      borderRadius: 24,
-                    },
-                    rightSideStyle,
-                  ]}
-                />
-              </View>
-            );
-          })}
-
           {/* Hero card (starts full-screen, morphs into center card) */}
           <Animated.View style={[styles.cardShadow, cardWrapStyle]}>
             <Animated.View style={[styles.cardInner, cardInnerStyle]}>
@@ -452,6 +419,43 @@ export default function SplashOnboarding({
               </Animated.View>
             </Animated.View>
           </Animated.View>
+        </Animated.View>
+
+        {/* Unified side columns container (separate scroll style from center) */}
+        <Animated.View style={[StyleSheet.absoluteFill, sideColumnStyle]}>
+          {SIDE_ROWS.map((row) => {
+            const topPos = targetTop + row.offset * stepY;
+            return (
+              <View key={`row-${row.offset}`}>
+                <CollabCard
+                  item={row.left}
+                  style={[
+                    {
+                      left: targetLeft - stepX,
+                      top: topPos,
+                      width: cardW,
+                      height: cardH,
+                      borderRadius: 24,
+                    },
+                    leftSideStyle,
+                  ]}
+                />
+                <CollabCard
+                  item={row.right}
+                  style={[
+                    {
+                      left: targetLeft + stepX,
+                      top: topPos,
+                      width: cardW,
+                      height: cardH,
+                      borderRadius: 24,
+                    },
+                    rightSideStyle,
+                  ]}
+                />
+              </View>
+            );
+          })}
         </Animated.View>
       </Animated.View>
 
